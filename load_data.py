@@ -18,7 +18,7 @@ def get_price_data(ticker, start_date, end_date):
 def store_price_data(ticker, price_data, do_rewrite):
     f = open(f'./stock_prices/{ticker}.txt', 'w' if do_rewrite else 'a')
     f.writelines(
-        '{price}, {date}, {splitFactor}\n'.format(price=entry['price'], date=entry['date'], splitFactor=entry['splitFactor']) 
+        '{price}, {date}, {splitFactor}\n'.format(price=entry['price'], date=entry['date'][0:10], splitFactor=entry['splitFactor']) 
         for entry in price_data
     )
     f.close()
@@ -41,7 +41,7 @@ def add_recent_data():
         lastline = lines[-1]
 
         ticker = docname.split('.')[0]
-        lastdate = lastline.split(', ')[1][0:10]
+        lastdate = lastline.split(', ')[1]
         today = date.today()
 
         new_data = get_price_data(ticker, lastdate, today)
