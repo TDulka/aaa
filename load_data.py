@@ -38,6 +38,7 @@ def add_recent_data():
     for docname in os.listdir('./stock_prices'):
         doc = open(f'./stock_prices/{docname}')
         lines = doc.readlines()
+        doc.close()
         lastline = lines[-1]
 
         ticker = docname.split('.')[0]
