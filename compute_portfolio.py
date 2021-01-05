@@ -1,7 +1,7 @@
 from functools import reduce
 
 def compute_daily_returns(ticker):
-    doc = open(f'./stock_prices/{ticker}.txt')
+    doc = open(f'./stock_prices/{ticker}.csv')
     lines = doc.readlines()
     returns = []
     for i in range(1, len(lines)):

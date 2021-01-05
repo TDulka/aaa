@@ -16,7 +16,7 @@ def get_price_data(ticker, start_date, end_date):
     return list(map(lambda x: { 'price': x['close'], 'date': x['date'], 'splitFactor': x['splitFactor'] }, data))
 
 def store_price_data(ticker, price_data, do_rewrite):
-    f = open(f'./stock_prices/{ticker}.txt', 'w' if do_rewrite else 'a')
+    f = open(f'./stock_prices/{ticker}.csv', 'w' if do_rewrite else 'a')
     f.writelines(
         '{price}, {date}, {splitFactor}\n'.format(price=entry['price'], date=entry['date'][0:10], splitFactor=entry['splitFactor']) 
         for entry in price_data
