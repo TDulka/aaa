@@ -14,16 +14,15 @@ def compute_daily_returns(ticker):
     
     return returns
 
-def get_normalized_returns(tickers, offset):
+def get_normalized_returns(tickers):
     returns = {}
     parallel_period = 999999
 
     for ticker in tickers:
         daily_returns = compute_daily_returns(ticker)
-        returns_until_offset = daily_returns[0:-offset] if offset > 0 else daily_returns
-        starting_point = len(returns_until_offset) % 20
+        starting_point = len(daily_returns) % 20
 
-        returns[ticker] = returns_until_offset[starting_point:]
+        returns[ticker] = daily_returns[starting_point:]
         if len(returns[ticker]) < parallel_period:
             parallel_period = len(returns[ticker])
 
@@ -96,8 +95,8 @@ def compute_weights_by_volatility(n_month_returns, last_month_daily_returns):
 
 my_tickers = ['SPY', 'EZU', 'EWJ', 'EEM', 'VNQ', 'RWX', 'IEF', 'TLT', 'DBC', 'GLD']
 
-def compute_returns(tickers, lookback_period, offset):
-    returns = get_normalized_returns(tickers, offset)
+def compute_returns(tickers, lookback_period):
+    returns = get_normalized_returns(tickers)
 
     total_return = 1
     count = 0
@@ -124,4 +123,4 @@ def compute_returns(tickers, lookback_period, offset):
     
     return total_return
 
-print(compute_returns(my_tickers, 6, 0))
+print(compute_returns(my_tickers, 6))
