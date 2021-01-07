@@ -1,6 +1,7 @@
 from functools import reduce
+from datetime import date
 
-def compute_daily_returns(ticker):
+def compute_daily_returns(ticker, startDate, endDate):
     doc = open(f'./stock_prices/{ticker}.csv')
     lines = doc.readlines()
     returns = []
@@ -10,16 +11,19 @@ def compute_daily_returns(ticker):
         stock_split = parts_today[2]
         price_yesterday = lines[i - 1].split(', ')[0]
 
-        returns.append(float(stock_split) * float(price_today) / float(price_yesterday))
+        date_today = date.fromisoformat(parts_today[1])
+
+        if (date_today >= date.fromisoformat(startDate) and date_today <= date.fromisoformat(endDate)):
+            returns.append(float(stock_split) * float(price_today) / float(price_yesterday))
     
     return returns
 
-def get_normalized_returns(tickers):
+def get_normalized_returns(tickers, startDate, endDate):
     returns = {}
     parallel_period = 999999
 
     for ticker in tickers:
-        daily_returns = compute_daily_returns(ticker)
+        daily_returns = compute_daily_returns(ticker, startDate, endDate)
         starting_point = len(daily_returns) % 20
 
         returns[ticker] = daily_returns[starting_point:]
@@ -95,8 +99,8 @@ def compute_weights_by_volatility(n_month_returns, last_month_daily_returns):
 
 my_tickers = ['SPY', 'EZU', 'EWJ', 'EEM', 'VNQ', 'RWX', 'IEF', 'TLT', 'DBC', 'GLD']
 
-def compute_returns(tickers, lookback_period):
-    returns = get_normalized_returns(tickers)
+def compute_returns(tickers, lookback_period, startDate, endDate):
+    returns = get_normalized_returns(tickers, startDate, endDate)
 
     total_return = 1
     count = 0
@@ -123,4 +127,4 @@ def compute_returns(tickers, lookback_period):
     
     return total_return
 
-print(compute_returns(my_tickers, 6))
+print(compute_returns(my_tickers, 6, '2006-12-19', '2020-12-31'))
