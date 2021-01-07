@@ -1,5 +1,7 @@
 from functools import reduce
 from datetime import date
+from weight_algos.momentum_equal_cash import compute_weights_momentum_equal_cash
+from weight_algos.momentum_volatility_cash import compute_weights_momentum_volatility_cash
 
 def compute_daily_returns(ticker, startDate, endDate):
     doc = open(f'./stock_prices/{ticker}.csv')
@@ -35,68 +37,6 @@ def get_normalized_returns(tickers, startDate, endDate):
 
     return returns
 
-def compute_weights(n_month_returns, last_month_daily_returns):
-    top50percent = len(n_month_returns) // 2
-    weight = 0.2
-    
-    array = []
-    for ticker in n_month_returns:
-        array.append({ 'ticker': ticker, 'n_month_return': n_month_returns[ticker]})
-    array.sort(key = lambda x: x['n_month_return'], reverse=True)
-    
-    best_half = array[0:top50percent]   
-
-    weights = { 'CASH': 0 }
-    for ticker in n_month_returns:
-        weights[ticker] = 0 
-
-    for entry in best_half:
-        ticker = entry['ticker']
-        if n_month_returns[ticker] > 1:
-            weights[ticker] = weight
-        else:
-            weights['CASH'] += weight
-
-    return weights
-
-
-def compute_weights_by_volatility(n_month_returns, last_month_daily_returns):
-    top50percent = len(n_month_returns) // 2
-    
-    array = []
-    for ticker in n_month_returns:
-        array.append({ 'ticker': ticker, 'n_month_return': n_month_returns[ticker]})
-    array.sort(key = lambda x: x['n_month_return'], reverse=True)
-    
-    best_half = array[0:top50percent]   
-
-    weights = { 'CASH': 0 }
-    for ticker in n_month_returns:
-        weights[ticker] = 0 
-    
-    volatilities = {}
-    for ticker in last_month_daily_returns:
-        samplemean = sum(last_month_daily_returns[ticker]) / 20
-        samplevariance = sum(map(lambda x: (x - samplemean) ** 2 , last_month_daily_returns[ticker]))
-        volatilities[ticker] = samplevariance ** 0.5 / 20 ** 0.5
-
-    total_volatility_of_best = 0
-    for entry in best_half:
-        total_volatility_of_best += volatilities[entry['ticker']]
-
-    for entry in best_half:
-        ticker = entry['ticker']
-        if n_month_returns[ticker] > 1:
-            weights[ticker] = volatilities[ticker] / total_volatility_of_best
-
-    weight_sum = 0
-    for ticker in weights:
-        weight_sum += weights[ticker]
-
-    weights['CASH'] = 1 - weight_sum
-
-    return weights
-
 my_tickers = ['SPY', 'EZU', 'EWJ', 'EEM', 'VNQ', 'RWX', 'IEF', 'TLT', 'DBC', 'GLD']
 
 def compute_returns(tickers, lookback_period, startDate, endDate):
@@ -115,7 +55,7 @@ def compute_returns(tickers, lookback_period, startDate, endDate):
             last_month_daily_returns[ticker] = returns[ticker][day - 20:day]
             next_month_returns[ticker] = reduce(lambda a,b: a*b, returns[ticker][day:day + 20])
 
-        weights = compute_weights_by_volatility(n_month_returns, last_month_daily_returns)
+        weights = compute_weights_momentum_volatility_cash(n_month_returns, last_month_daily_returns)
 
         portfolio_month_return = weights['CASH']
         for ticker in tickers:
