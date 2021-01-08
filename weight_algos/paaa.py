@@ -11,6 +11,8 @@ def compute_weights_paaa(n_month_returns, last_month_daily_returns):
     weights = { ticker: 0 for ticker in n_month_returns }
     weights['CASH'] = (top50percent - len(selected_stocks)) * 0.2
     
+    if len(selected_stocks) == 0:
+        return weights
 
     var_covar_matrix = []
     for index1 in range(len(selected_stocks)):
