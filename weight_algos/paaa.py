@@ -8,6 +8,10 @@ def compute_weights_paaa(n_month_returns, last_month_daily_returns):
     stocks.sort(key = lambda x: x['n_month_return'], reverse=True)
     selected_stocks = [x['ticker'] for x in stocks[0:top50percent] if x['n_month_return'] > 1]
 
+    weights = { ticker: 0 for ticker in n_month_returns }
+    weights['CASH'] = (top50percent - len(selected_stocks)) * 0.2
+    
+
     var_covar_matrix = []
     for index1 in range(len(selected_stocks)):
         var_covar_matrix.append([])
@@ -21,23 +25,19 @@ def compute_weights_paaa(n_month_returns, last_month_daily_returns):
         return sum(var_covar_matrix[i][j] * w[i] * w[j] for i in range(len(w)) for j in range(len(w)))
 
     def constraint_sum(w):
-        return sum(w) - 1.0
+        return sum(w) + weights['CASH'] - 1
     
-    foo = minimize(portfolio_variance, [0.2, 0.2, 0.2, 0.2, 0.2], constraints=[{
+    foo = minimize(portfolio_variance, [0 for i in range(len(selected_stocks))], constraints=[{
         'fun': constraint_sum,
         'type': 'eq'
         }], 
         method = 'SLSQP', 
-        bounds = [(0.1,0.2),(0, 0.5),(0, 0.5),(0, 0.5),(0, 0.5)],
+        bounds = [(0, 1) for i in range(len(selected_stocks))],
         options={
             'maxiter': 1000,
             'disp': True
         }
     )
-    print(foo.x)
-
-    weights = { ticker: 0 for ticker in n_month_returns }
-    weights['CASH'] = (top50percent - len(selected_stocks)) * 0.2
 
     for i in range(len(foo.x)):
         weights[selected_stocks[i]] = foo.x[i]
