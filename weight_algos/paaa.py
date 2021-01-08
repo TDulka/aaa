@@ -8,30 +8,22 @@ def compute_weights_paaa(n_month_returns, last_month_daily_returns):
     stocks.sort(key = lambda x: x['n_month_return'], reverse=True)
     selected_stocks = [x['ticker'] for x in stocks[0:top50percent] if x['n_month_return'] > 1]
 
-    print(selected_stocks)
+    var_covar_matrix = []
+    for index1 in range(len(selected_stocks)):
+        var_covar_matrix.append([])
+        for index2 in range(len(selected_stocks)):
+            mean1 = sum(dailies[selected_stocks[index1]]) / 20
+            mean2 = sum(dailies[selected_stocks[index2]]) / 20
+            covariance = sum((dailies[selected_stocks[index1]][i] - mean1)*(dailies[selected_stocks[index2]][i] - mean2) for i in range(20)) / 20
+            var_covar_matrix[index1].append(covariance)
 
     def portfolio_variance(w):
-        # print(x)
-
-        weights = {}
-        for i in range(len(w)):
-            weights[selected_stocks[i]] = w[i]
-
-        total_variance = 0
-        for ticker1 in selected_stocks:
-            for ticker2 in selected_stocks:
-                mean1 = sum(dailies[ticker1]) / 20
-                mean2 = sum(dailies[ticker2]) / 20
-                covariance = sum((dailies[ticker1][i] - mean1)*(dailies[ticker2][i] - mean2) for i in range(20)) / 19
-
-                total_variance += weights[ticker1] * weights[ticker2] * covariance
-        
-        return total_variance
+        return sum(var_covar_matrix[i][j] * w[i] * w[j] for i in range(len(w)) for j in range(len(w)))
 
     def constraint_sum(w):
         return sum(w) - 1.0
     
-    foo = minimize(portfolio_variance, [0.3, 0.1, 0.2, 0.2, 0.2], constraints=[{
+    foo = minimize(portfolio_variance, [0.2, 0.2, 0.2, 0.2, 0.2], constraints=[{
         'fun': constraint_sum,
         'type': 'eq'
         }], 
@@ -44,14 +36,12 @@ def compute_weights_paaa(n_month_returns, last_month_daily_returns):
     )
     print(foo.x)
 
-    weights_result = { ticker: 0 for ticker in n_month_returns }
-    weights_result['CASH'] = (top50percent - len(selected_stocks)) * 0.2
+    weights = { ticker: 0 for ticker in n_month_returns }
+    weights['CASH'] = (top50percent - len(selected_stocks)) * 0.2
 
     for i in range(len(foo.x)):
-        weights_result[selected_stocks[i]] = foo.x[i]
+        weights[selected_stocks[i]] = foo.x[i]
 
-    # print(weights_result)
-
-    return weights_result
+    return weights
 
 
