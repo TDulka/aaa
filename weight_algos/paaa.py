@@ -37,7 +37,7 @@ def compute_weights_paaa(n_month_returns, last_month_daily_returns):
         bounds = [(0, 1) for i in range(len(selected_stocks))],
         options={
             'maxiter': 1000,
-            'disp': True
+            'disp': False
         }
     )
 
