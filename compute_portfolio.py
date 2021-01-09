@@ -4,7 +4,7 @@ from weight_algos.momentum_equal_cash import compute_weights_momentum_equal_cash
 from weight_algos.momentum_volatility_cash import compute_weights_momentum_volatility_cash
 from weight_algos.paaa import compute_weights_paaa
 
-def compute_daily_returns(ticker, startDate, endDate):
+def compute_daily_returns(ticker, startdate, enddate):
     doc = open(f'./stock_prices/{ticker}.csv')
     lines = doc.readlines()
     returns = []
@@ -16,17 +16,17 @@ def compute_daily_returns(ticker, startDate, endDate):
 
         date_today = date.fromisoformat(parts_today[1])
 
-        if (date_today >= date.fromisoformat(startDate) and date_today <= date.fromisoformat(endDate)):
+        if (date_today >= date.fromisoformat(startdate) and date_today <= date.fromisoformat(enddate)):
             returns.append(float(stock_split) * float(price_today) / float(price_yesterday))
     
     return returns
 
-def get_normalized_returns(tickers, startDate, endDate):
+def get_normalized_returns(tickers, startdate, enddate):
     returns = {}
     parallel_period = 999999
 
     for ticker in tickers:
-        daily_returns = compute_daily_returns(ticker, startDate, endDate)
+        daily_returns = compute_daily_returns(ticker, startdate, enddate)
         starting_point = len(daily_returns) % 20
 
         returns[ticker] = daily_returns[starting_point:]
@@ -38,8 +38,8 @@ def get_normalized_returns(tickers, startDate, endDate):
 
     return returns
 
-def compute_returns(tickers, lookback_period, compute_weights_alg, startDate, endDate):
-    returns = get_normalized_returns(tickers, startDate, endDate)
+def compute_returns(tickers, lookback_period, compute_weights_alg, startdate, enddate):
+    returns = get_normalized_returns(tickers, startdate, enddate)
 
     total_return = 1
     count = 0
