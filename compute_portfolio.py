@@ -4,6 +4,7 @@ from weight_algos.momentum_equal_cash import compute_weights_momentum_equal_cash
 from weight_algos.momentum_volatility_cash import compute_weights_momentum_volatility_cash
 from weight_algos.paaa import compute_weights_paaa
 import numpy as np
+import matplotlib.pyplot as plt 
 
 def compute_daily_returns(ticker, startdate, enddate):
     doc = open(f'./stock_prices/{ticker}.csv')
@@ -75,7 +76,7 @@ def compute_cumulated_returns(tickers, lookback_period, compute_weights_alg, sta
 
 def compute_final_return(tickers, lookback_period, compute_weights_alg, startdate, enddate):
     returns,_ = compute_cumulated_returns(tickers, lookback_period, compute_weights_alg, startdate, enddate)
-
+    plt.plot(returns)
     return returns[-1]
 
 # EDIT WHAT YOU WANT HERE
