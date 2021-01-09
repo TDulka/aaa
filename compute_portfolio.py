@@ -2,7 +2,7 @@ from functools import reduce
 from datetime import date
 from weight_algos.momentum_equal_cash import compute_weights_momentum_equal_cash
 from weight_algos.momentum_volatility_cash import compute_weights_momentum_volatility_cash
-from weight_algos.paaa import compute_weights_paaa
+#from weight_algos.paaa import compute_weights_paaa
 
 def compute_daily_returns(ticker, startdate, enddate):
     doc = open(f'./stock_prices/{ticker}.csv')
@@ -38,11 +38,10 @@ def get_normalized_returns(tickers, startdate, enddate):
 
     return returns
 
-def compute_returns(tickers, lookback_period, compute_weights_alg, startdate, enddate):
+def compute_portfolio_returns(tickers, lookback_period, compute_weights_alg, startdate, enddate):
     returns = get_normalized_returns(tickers, startdate, enddate)
+    portfolio_month_returns = []
 
-    total_return = 1
-    count = 0
 
     # start from the day for which we have enough data in past (for 6 month lookback start in day 120), iterate each month
     for day in range(20 * lookback_period, len(returns[tickers[0]]), 20):
@@ -55,15 +54,26 @@ def compute_returns(tickers, lookback_period, compute_weights_alg, startdate, en
             next_month_returns[ticker] = reduce(lambda a,b: a*b, returns[ticker][day:day + 20])
 
         weights = compute_weights_alg(n_month_returns, last_month_daily_returns)
-
         portfolio_month_return = weights['CASH']
         for ticker in tickers:
             portfolio_month_return += weights[ticker] * next_month_returns[ticker]
         
-        total_return *= portfolio_month_return
-        if (portfolio_month_return > 1):
-            count += 1
+        portfolio_month_returns.append( portfolio_month_return)
+
+
+    return portfolio_month_returns
+
+
+def compute_returns(tickers, lookback_period, compute_weights_alg, startdate, enddate):
+    total_return = 1
+    count = 0
     
+    portfolio_month_returns = compute_portfolio_returns(tickers, lookback_period, compute_weights_alg, startdate, enddate)
+    
+    for month in range(len(portfolio_month_returns)):        
+        total_return *= portfolio_month_returns[month]
+        if (portfolio_month_returns[month] > 1):
+            count += 1
     return total_return
 
 # EDIT WHAT YOU WANT HERE
@@ -73,4 +83,4 @@ my_tickers = ['SPY', 'EZU', 'EWJ', 'EEM', 'VNQ', 'RWX', 'IEF', 'TLT', 'DBC', 'GL
 # how long in the past to look for momentum (e.g. 6 => look at 6 month momentum)
 # what function (algorithm) to use to calculate the weights in the portfolio each month
 # boundaries for starting date and ending date of the period in which you are interested in
-print(compute_returns(my_tickers, 6, compute_weights_paaa, '2006-12-19', '2020-12-31'))
+print(compute_returns(my_tickers, 6, compute_weights_momentum_volatility_cash, '2006-12-19', '2020-12-31'))
