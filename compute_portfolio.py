@@ -2,6 +2,7 @@ from functools import reduce
 from datetime import date
 from weight_algos.momentum_equal_cash import compute_weights_momentum_equal_cash
 from weight_algos.momentum_volatility_cash import compute_weights_momentum_volatility_cash
+from weight_algos.paaa import compute_weights_paaa
 
 def compute_daily_returns(ticker, startDate, endDate):
     doc = open(f'./stock_prices/{ticker}.csv')
@@ -37,9 +38,7 @@ def get_normalized_returns(tickers, startDate, endDate):
 
     return returns
 
-my_tickers = ['SPY', 'EZU', 'EWJ', 'EEM', 'VNQ', 'RWX', 'IEF', 'TLT', 'DBC', 'GLD']
-
-def compute_returns(tickers, lookback_period, startDate, endDate):
+def compute_returns(tickers, lookback_period, compute_weights_alg, startDate, endDate):
     returns = get_normalized_returns(tickers, startDate, endDate)
 
     total_return = 1
@@ -55,7 +54,7 @@ def compute_returns(tickers, lookback_period, startDate, endDate):
             last_month_daily_returns[ticker] = returns[ticker][day - 20:day]
             next_month_returns[ticker] = reduce(lambda a,b: a*b, returns[ticker][day:day + 20])
 
-        weights = compute_weights_momentum_volatility_cash(n_month_returns, last_month_daily_returns)
+        weights = compute_weights_alg(n_month_returns, last_month_daily_returns)
 
         portfolio_month_return = weights['CASH']
         for ticker in tickers:
@@ -67,4 +66,11 @@ def compute_returns(tickers, lookback_period, startDate, endDate):
     
     return total_return
 
-print(compute_returns(my_tickers, 6, '2006-12-19', '2020-12-31'))
+# EDIT WHAT YOU WANT HERE
+my_tickers = ['SPY', 'EZU', 'EWJ', 'EEM', 'VNQ', 'RWX', 'IEF', 'TLT', 'DBC', 'GLD']
+# compute_returns takes arguments:
+# tickers for which you want the returns computed
+# how long in the past to look for momentum (e.g. 6 => look at 6 month momentum)
+# what function (algorithm) to use to calculate the weights in the portfolio each month
+# boundaries for starting date and ending date of the period in which you are interested in
+print(compute_returns(my_tickers, 6, compute_weights_paaa, '2006-12-19', '2020-12-31'))
