@@ -1,4 +1,6 @@
 from scipy.optimize import minimize
+from qpsolvers import solve_qp
+from numpy import array, dot, identity, ones, zeros
  
 def compute_weights_paaa(n_month_returns, last_month_daily_returns):
     dailies = last_month_daily_returns
@@ -7,42 +9,35 @@ def compute_weights_paaa(n_month_returns, last_month_daily_returns):
     stocks = [{ 'ticker': ticker, 'n_month_return': n_month_returns[ticker] } for ticker in n_month_returns]
     stocks.sort(key = lambda x: x['n_month_return'], reverse=True)
     selected_stocks = [x['ticker'] for x in stocks[0:top50percent] if x['n_month_return'] > 1]
+    number_of_selected = len(selected_stocks)
 
     weights = { ticker: 0 for ticker in n_month_returns }
-    weights['CASH'] = (top50percent - len(selected_stocks)) * 0.2
+    weights['CASH'] = (top50percent - number_of_selected) * 0.2
     
-    if len(selected_stocks) == 0:
+    if number_of_selected == 0:
         return weights
 
     var_covar_matrix = []
-    for index1 in range(len(selected_stocks)):
+    for index1 in range(number_of_selected):
         var_covar_matrix.append([])
-        for index2 in range(len(selected_stocks)):
+        for index2 in range(number_of_selected):
             mean1 = sum(dailies[selected_stocks[index1]]) / 20
             mean2 = sum(dailies[selected_stocks[index2]]) / 20
             covariance = sum((dailies[selected_stocks[index1]][i] - mean1)*(dailies[selected_stocks[index2]][i] - mean2) for i in range(20)) / 20
             var_covar_matrix[index1].append(covariance)
 
-    def portfolio_variance(w):
-        return sum(var_covar_matrix[i][j] * w[i] * w[j] for i in range(len(w)) for j in range(len(w)))
+    # uses https://pypi.org/project/qpsolvers/
+    P = array(var_covar_matrix)
+    q = zeros(number_of_selected)
+    G = identity(number_of_selected) * (-1)
+    h = zeros(number_of_selected)
+    A = ones(number_of_selected)
+    b = array([1 - weights['CASH']]) 
 
-    def constraint_sum(w):
-        return sum(w) + weights['CASH'] - 1
-    
-    foo = minimize(portfolio_variance, [0 for i in range(len(selected_stocks))], constraints=[{
-        'fun': constraint_sum,
-        'type': 'eq'
-        }], 
-        method = 'SLSQP', 
-        bounds = [(0, 1) for i in range(len(selected_stocks))],
-        options={
-            'maxiter': 1000,
-            'disp': False
-        }
-    )
+    optimized_weights = solve_qp(P, q, G, h, A, b)
 
-    for i in range(len(foo.x)):
-        weights[selected_stocks[i]] = foo.x[i]
+    for i in range(number_of_selected):
+        weights[selected_stocks[i]] = optimized_weights[i]
 
     return weights
 
