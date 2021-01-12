@@ -33,8 +33,10 @@ def compute_weights_paaa(n_month_returns, last_month_daily_returns):
     h = zeros(number_of_selected)
     A = ones(number_of_selected)
     b = array([1 - weights['CASH']]) 
+    lb = zeros(number_of_selected)
+    up = array([0.5 for i in selected_stocks])
 
-    optimized_weights = solve_qp(P, q, G, h, A, b)
+    optimized_weights = solve_qp(P, q, G, h, A, b, lb, up)
 
     for i in range(number_of_selected):
         weights[selected_stocks[i]] = optimized_weights[i]
