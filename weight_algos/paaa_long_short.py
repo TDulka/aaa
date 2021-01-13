@@ -33,11 +33,6 @@ def compute_weights_paaa_long_short(n_month_returns, last_month_daily_returns):
 
     optimized_weights = array(solve_qp(P, q, A = A, b = b, lb = lb, ub = ub))
 
-    portfolio_sd = optimized_weights.dot(P).dot(transpose(optimized_weights)) ** 0.5
-    target_sd = 0.008
-    leverage = target_sd / portfolio_sd
-    
-    optimized_weights = optimized_weights * leverage
     total_stock_weight = 0
 
     for i in range(number_of_stocks):
