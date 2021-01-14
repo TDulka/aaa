@@ -1,5 +1,6 @@
 def compute_weights_momentum_volatility_cash(n_month_returns, last_month_daily_returns):
     top50percent = len(n_month_returns) // 2
+    days_in_month = len(last_month_daily_returns[list(last_month_daily_returns)[0]])
     
     stocks = [{ 'ticker': ticker, 'n_month_return': n_month_returns[ticker] } for ticker in n_month_returns]
     stocks.sort(key = lambda x: x['n_month_return'], reverse=True)
@@ -7,8 +8,8 @@ def compute_weights_momentum_volatility_cash(n_month_returns, last_month_daily_r
 
     volatilities = {}
     for ticker in last_month_daily_returns:
-        samplemean = sum(last_month_daily_returns[ticker]) / 20
-        samplevariance = sum((x - samplemean) ** 2 for x in last_month_daily_returns[ticker]) / 20
+        samplemean = sum(last_month_daily_returns[ticker]) / days_in_month
+        samplevariance = sum((x - samplemean) ** 2 for x in last_month_daily_returns[ticker]) / days_in_month
         volatilities[ticker] = samplevariance ** 0.5 
 
     total_volatility_of_best = sum([ volatilities[ticker] for ticker in selected_stocks ])

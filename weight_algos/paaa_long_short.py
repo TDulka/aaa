@@ -1,8 +1,9 @@
 from qpsolvers import solve_qp
 from numpy import array, dot, identity, ones, zeros, transpose
- 
+
 def compute_weights_paaa_long_short(n_month_returns, last_month_daily_returns):
     dailies = last_month_daily_returns
+    days_in_month = len(dailies[list(dailies)[0]])
     half = len(n_month_returns) // 2
     
     stocks = [{ 
@@ -18,9 +19,13 @@ def compute_weights_paaa_long_short(n_month_returns, last_month_daily_returns):
     for index1 in range(number_of_stocks):
         var_covar_matrix.append([])
         for index2 in range(number_of_stocks):
-            mean1 = sum(dailies[stocks[index1]['ticker']]) / 20
-            mean2 = sum(dailies[stocks[index2]['ticker']]) / 20
-            covariance = sum((dailies[stocks[index1]['ticker']][i] - mean1)*(dailies[stocks[index2]['ticker']][i] - mean2) for i in range(20)) / 20
+            mean1 = sum(dailies[stocks[index1]['ticker']]) / days_in_month
+            mean2 = sum(dailies[stocks[index2]['ticker']]) / days_in_month
+            covariance = sum(
+                (dailies[stocks[index1]['ticker']][i] - mean1)*
+                (dailies[stocks[index2]['ticker']][i] - mean2) 
+                for i in range(days_in_month)
+            ) / days_in_month
             var_covar_matrix[index1].append(covariance)
 
     # uses https://pypi.org/project/qpsolvers/

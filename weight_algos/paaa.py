@@ -4,6 +4,7 @@ from numpy import array, dot, identity, ones, zeros
  
 def compute_weights_paaa(n_month_returns, last_month_daily_returns):
     dailies = last_month_daily_returns
+    days_in_month = len(dailies[list(dailies)[0]])
     top50percent = len(n_month_returns) // 2
     
     stocks = [{ 'ticker': ticker, 'n_month_return': n_month_returns[ticker] } for ticker in n_month_returns]
@@ -21,9 +22,13 @@ def compute_weights_paaa(n_month_returns, last_month_daily_returns):
     for index1 in range(number_of_selected):
         var_covar_matrix.append([])
         for index2 in range(number_of_selected):
-            mean1 = sum(dailies[selected_stocks[index1]]) / 20
-            mean2 = sum(dailies[selected_stocks[index2]]) / 20
-            covariance = sum((dailies[selected_stocks[index1]][i] - mean1)*(dailies[selected_stocks[index2]][i] - mean2) for i in range(20)) / 20
+            mean1 = sum(dailies[selected_stocks[index1]]) / days_in_month
+            mean2 = sum(dailies[selected_stocks[index2]]) / days_in_month
+            covariance = sum(
+                (dailies[selected_stocks[index1]][i] - mean1)*
+                (dailies[selected_stocks[index2]][i] - mean2) 
+                for i in range(days_in_month)
+            ) / days_in_month
             var_covar_matrix[index1].append(covariance)
 
     # uses https://pypi.org/project/qpsolvers/
