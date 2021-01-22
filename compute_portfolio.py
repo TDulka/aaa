@@ -1,5 +1,6 @@
 from functools import reduce
 from datetime import date
+from weight_algos.all_equal import compute_weights_all_equal
 from weight_algos.momentum_equal_cash import compute_weights_momentum_equal_cash
 from weight_algos.momentum_volatility_cash import compute_weights_momentum_volatility_cash
 from weight_algos.paaa import compute_weights_paaa
@@ -12,6 +13,7 @@ def compute_daily_returns(ticker, startdate, enddate):
     doc = open(f'./stock_prices/{ticker}.csv')
     lines = doc.readlines()
     returns = []
+    dates = []
     for i in range(1, len(lines)):
         parts_today = lines[i].split(', ')
         price_today = parts_today[0]
@@ -22,15 +24,16 @@ def compute_daily_returns(ticker, startdate, enddate):
 
         if (date_today >= date.fromisoformat(startdate) and date_today <= date.fromisoformat(enddate)):
             returns.append(float(stock_split) * float(price_today) / float(price_yesterday))
+            dates.append(date_today.strftime("%m/%Y"))
     
-    return returns
+    return returns, dates
 
 def get_normalized_returns(tickers, startdate, enddate, days_in_month):
     returns = {}
     parallel_period = 999999
 
     for ticker in tickers:
-        daily_returns = compute_daily_returns(ticker, startdate, enddate)
+        daily_returns, dates = compute_daily_returns(ticker, startdate, enddate)
         starting_point = len(daily_returns) % days_in_month
 
         returns[ticker] = daily_returns[starting_point:]
@@ -39,8 +42,8 @@ def get_normalized_returns(tickers, startdate, enddate, days_in_month):
 
     for ticker in tickers:
         returns[ticker] = returns[ticker][-parallel_period:]
-
-    return returns
+    dates = dates[-parallel_period:]
+    return returns, dates
 
 def compute_portfolio_returns(tickers, lookback_period, compute_weights_alg, startdate, enddate, days_in_month):
     '''Compute monthly returns of a portfolio, given a weighing algorithm.
@@ -54,9 +57,9 @@ def compute_portfolio_returns(tickers, lookback_period, compute_weights_alg, sta
     days_in_month - how many days to consider being in a month
     '''
     
-    returns = get_normalized_returns(tickers, startdate, enddate, days_in_month)
+    returns, dates = get_normalized_returns(tickers, startdate, enddate, days_in_month)
     portfolio_month_returns = np.ones(len(returns[tickers[0]])//days_in_month-lookback_period)
-
+    decision_dates = [dates[day] for day in range(days_in_month * lookback_period, len(returns[tickers[0]]), days_in_month)]
     # start from the day for which we have enough data in past (for 6 month lookback start in day 120), iterate each month
     for day in range(days_in_month * lookback_period, len(returns[tickers[0]]), days_in_month):
         n_month_returns = {}
@@ -74,18 +77,18 @@ def compute_portfolio_returns(tickers, lookback_period, compute_weights_alg, sta
         
         portfolio_month_returns[day//days_in_month-lookback_period] = portfolio_month_return
 
-    return portfolio_month_returns
+    return portfolio_month_returns, decision_dates
 
 
 def compute_cumulated_returns(portfolio_month_returns):
     cumulated_returns = np.cumprod(portfolio_month_returns)
     count = np.sum(portfolio_month_returns>1)
-    
+
     return cumulated_returns, count
 
 def compute_final_return(portfolio_month_returns):
     returns,_ = compute_cumulated_returns(portfolio_month_returns)
-    plt.plot(returns)
+    plt.plot(np.log(returns))
     return returns[-1]
 
 def get_day_strings():
@@ -95,11 +98,13 @@ def get_day_strings():
 my_tickers = ['SPY', 'EZU', 'EWJ', 'EEM', 'VNQ', 'RWX', 'IEF', 'TLT', 'DBC', 'GLD']
 
 np.set_printoptions(precision=16)
-
+final_returns = []
 for day in get_day_strings():
-    returns_for_endday = compute_portfolio_returns(
-        my_tickers, 6, compute_weights_paaa_long_short, '2006-12-19', '2020-12-%s' % day, 20
+    returns_for_endday, dates = compute_portfolio_returns(
+        my_tickers, 6, compute_weights_all_equal, '2006-12-19', '2020-12-%s' % day, 20
     )
-    compute_final_return(returns_for_endday)
-
+    final_returns.append(compute_final_return(returns_for_endday))
+final_returns.sort()
+print(final_returns)
+plt.xticks(np.arange(8,len(dates),10),dates[8::10],rotation=45)
 plt.show()
