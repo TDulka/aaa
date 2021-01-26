@@ -66,14 +66,14 @@ def get_daily_stats(tickers, start, end):
     return daily_stats
 
 
-my_tickers = ['SPY', 'EZU', 'EWJ', 'EEM', 'VNQ', 'RWX', 'IEF', 'TLT', 'DBC', 'GLD']
-daily_stats = get_daily_stats(my_tickers, '2000-01-01', '2021-01-01')
+my_tickers = ['SPY', 'QQQ', 'MDY', 'IWM', 'FEZ', 'EWJ', 'EEM', 'EFA', 'SCZ', 'IYR', 'RWX', 'DBE', 'GLD', 'TLT', 'IEF', 'IEI', 'SHY', 'JNK', 'EMB']
+daily_stats = get_daily_stats(my_tickers, '2000-01-01', '2016-09-01')
 momentum_length = 120
 
 # Will keep track of what is currently in portfolio
 # Dictionary like { 'SPY': 10, 'EEM': 3.4 } means we have 10 stocks of SPY and 3.4 stocks of EEM
 portfolio = dict([(ticker, 0) for ticker in my_tickers])
-portfolio['CASH'] = 10000
+portfolio['CASH'] = 2.71
 
 cash_at_rebalancing_dates = []
 rebalancing_dates = []
@@ -95,12 +95,12 @@ for i in range(len(daily_stats)):
         cash_at_rebalancing_dates.append(cash_available)
         rebalancing_dates.append(todays_prices['date'])
 
-        cash_for_one_stock = cash_available / (len(my_tickers) / 2)
-
         # figure out what to buy based on momentum
         momenta = [todays_prices[ticker] / daily_stats[i - momentum_length][ticker] for ticker in my_tickers]
         cutoff = np.percentile(momenta, 50)
         
+        cash_for_one_stock = cash_available / len(list(filter(lambda x: x > cutoff, momenta)))
+
         for j in range(len(my_tickers)):
             ticker = my_tickers[j]
             if momenta[j] > cutoff:
@@ -121,7 +121,7 @@ print(current_value)
 
 np.set_printoptions(precision=16)
 plt.xticks(np.arange(8,len(rebalancing_dates),10),rebalancing_dates[8::10],rotation=45)
-plt.plot(cash_at_rebalancing_dates)
+plt.plot(np.log(cash_at_rebalancing_dates))
 plt.show()
     
 
